@@ -5,6 +5,8 @@ import {
   refreshExpiringTokens,
   runHealthChecks,
 } from "@/lib/publish/run";
+import { syncInbox } from "@/lib/inbox/sync";
+import { runApprovalReminders } from "@/lib/approvals/reminders";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -17,8 +19,10 @@ export const maxDuration = 60;
  */
 const JOBS = {
   "publish-due": () => publishDuePosts(),
+  "sync-inbox": () => syncInbox(),
   "refresh-tokens": () => refreshExpiringTokens(),
   "health-check": () => runHealthChecks(),
+  "approval-reminders": () => runApprovalReminders(),
   prune: async () => {
     await pruneOAuthStates();
     return { ok: true };

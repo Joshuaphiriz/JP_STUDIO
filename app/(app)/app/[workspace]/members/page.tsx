@@ -1,16 +1,10 @@
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { PageContainer, PageHeader } from "@/components/shell/page-header";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-  initials,
-} from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { db } from "@/lib/db/client";
-import { users, workspaceMembers } from "@/lib/db/schema";
+import { invitations, users, workspaceMembers } from "@/lib/db/schema";
 import { requireWorkspace } from "@/lib/dal";
+import { MembersClient } from "./members-client";
 
 export const metadata = { title: "Members" };
 
@@ -19,6 +13,7 @@ export default async function MembersPage(
 ) {
   const { workspace } = await props.params;
   const ws = await requireWorkspace(workspace);
+  const canManage = ws.can("member:manage");
 
   const members = await db
     .select({
@@ -33,46 +28,45 @@ export default async function MembersPage(
     .innerJoin(users, eq(workspaceMembers.userId, users.id))
     .where(eq(workspaceMembers.workspaceId, ws.id));
 
+  const pending = canManage
+    ? await db
+        .select({
+          id: invitations.id,
+          email: invitations.email,
+          role: invitations.workspaceRole,
+          createdAt: invitations.createdAt,
+        })
+        .from(invitations)
+        .where(
+          and(
+            eq(invitations.workspaceId, ws.id),
+            isNull(invitations.acceptedAt),
+          ),
+        )
+    : [];
+
   return (
     <PageContainer>
       <PageHeader
         title="Members"
         description="Who can work in this workspace."
       />
-      <Card>
-        <ul>
-          {members.map((m) => (
-            <li
-              key={m.id}
-              className="flex items-center gap-3 border-b border-[var(--border)] p-4 last:border-0"
-            >
-              <Avatar className="size-9">
-                {m.avatarUrl && <AvatarImage src={m.avatarUrl} alt="" />}
-                <AvatarFallback>{initials(m.fullName, m.email)}</AvatarFallback>
-              </Avatar>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">
-                  {m.fullName ?? m.email.split("@")[0]}
-                  {m.userId === ws.user.id && (
-                    <span className="ml-1.5 text-xs text-[var(--text-ghost)]">
-                      you
-                    </span>
-                  )}
-                </p>
-                <p className="truncate text-xs text-[var(--text-tertiary)]">
-                  {m.email}
-                </p>
-              </div>
-              <Badge variant={m.role === "owner" ? "primary" : "neutral"}>
-                {m.role}
-              </Badge>
-            </li>
-          ))}
-        </ul>
-      </Card>
-      <p className="mt-4 text-xs text-[var(--text-ghost)]">
-        Invitations and role management arrive in Phase 2.
-      </p>
+      <MembersClient
+        workspaceSlug={ws.slug}
+        currentUserId={ws.user.id}
+        canManage={canManage}
+        members={members}
+        pending={pending.map((p) => ({
+          ...p,
+          role: p.role ?? "editor",
+          createdAt: p.createdAt.toISOString(),
+        }))}
+      />
+      {!canManage && (
+        <Card className="mt-4 p-4 text-xs text-[var(--text-ghost)]">
+          Only owners and managers can invite or change members.
+        </Card>
+      )}
     </PageContainer>
   );
 }
