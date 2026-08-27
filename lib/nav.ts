@@ -17,7 +17,7 @@ export const WORKSPACE_NAV: NavItem[] = [
     icon: "CalendarClock",
     ready: true,
   },
-  { label: "Queue", segment: "queue", icon: "ListChecks" },
+  { label: "Queue", segment: "queue", icon: "ListChecks", ready: true },
   { label: "Approvals", segment: "approvals", icon: "ListChecks", ready: true },
   { label: "Inbox", segment: "inbox", icon: "Inbox", ready: true },
   { label: "Analytics", segment: "analytics", icon: "LineChart", ready: true },
