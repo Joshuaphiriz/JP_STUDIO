@@ -10,6 +10,7 @@ const supabaseHost = (() => {
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  turbopack: { root: __dirname },
   experimental: {
     optimizePackageImports: ["lucide-react", "date-fns"],
   },
