@@ -20,7 +20,15 @@ declare global {
 function create(): DB {
   const url = process.env.DATABASE_URL;
   if (!url) throw new Error("DATABASE_URL is not set");
-  const sql = postgres(url, { prepare: false, max: 1 });
+  const supabase = /supabase\.(co|com)/.test(url);
+  const sql = postgres(url, {
+    prepare: false,
+    // one socket per serverless instance; the pooler multiplexes
+    max: 1,
+    idle_timeout: 20,
+    // Supabase requires TLS but presents a cert the default chain rejects
+    ssl: supabase ? "require" : undefined,
+  });
   return drizzle(sql, { schema, casing: "snake_case" });
 }
 
