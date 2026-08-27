@@ -1,17 +1,9 @@
 "use server";
 
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-
-async function origin() {
-  const h = await headers();
-  return (
-    process.env.NEXT_PUBLIC_APP_URL ??
-    (h.get("origin") || `https://${h.get("host")}`)
-  );
-}
+import { getAppUrl } from "@/lib/url";
 
 export type SignInState = { error?: string; sent?: boolean; email?: string };
 
@@ -34,7 +26,7 @@ export async function signInWithEmail(
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: `${await origin()}/auth/callback?next=${encodeURIComponent(next)}`,
+      emailRedirectTo: `${await getAppUrl()}/auth/callback?next=${encodeURIComponent(next)}`,
     },
   });
 
@@ -48,7 +40,7 @@ export async function signInWithGoogle(formData: FormData) {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${await origin()}/auth/callback?next=${encodeURIComponent(next)}`,
+      redirectTo: `${await getAppUrl()}/auth/callback?next=${encodeURIComponent(next)}`,
     },
   });
   if (error || !data.url) redirect(`/sign-in?error=oauth`);

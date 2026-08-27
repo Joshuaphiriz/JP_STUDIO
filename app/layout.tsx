@@ -4,6 +4,7 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 import { ThemeStyle } from "@/components/theme/theme-style";
 import { DEFAULT_THEME } from "@/lib/theme/types";
+import { appBaseUrl } from "@/lib/url";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({
@@ -22,9 +23,7 @@ export const metadata: Metadata = {
   applicationName: "JP Studio",
   appleWebApp: { capable: true, statusBarStyle: "default", title: "JP Studio" },
   formatDetection: { telephone: false },
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
-  ),
+  metadataBase: new URL(appBaseUrl()),
 };
 
 export const viewport: Viewport = {
