@@ -15,8 +15,8 @@ const PUBLIC_PREFIXES = [
   "/connect/",
   "/auth/",
   "/legal/",
-  "/api/webhooks/",
-  "/api/cron/",
+  // API routes authenticate themselves (session cookie, bearer key, or secret)
+  "/api/",
 ];
 
 function isPublic(pathname: string) {

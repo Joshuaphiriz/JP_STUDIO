@@ -6,3 +6,4 @@ export * from "./content";
 export * from "./collab";
 export * from "./inbox";
 export * from "./analytics";
+export * from "./api";

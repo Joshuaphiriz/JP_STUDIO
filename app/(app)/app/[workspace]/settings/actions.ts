@@ -3,10 +3,61 @@
 import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
+import { and } from "drizzle-orm";
 import { db } from "@/lib/db/client";
-import { auditLog, clientPortalTokens, workspaces } from "@/lib/db/schema";
+import {
+  apiKeys,
+  auditLog,
+  clientPortalTokens,
+  workspaces,
+} from "@/lib/db/schema";
 import { requireWorkspace } from "@/lib/dal";
 import { randomToken, sha256Hex } from "@/lib/crypto";
+
+const API_SCOPES = [
+  "accounts:read",
+  "posts:read",
+  "posts:write",
+  "analytics:read",
+];
+
+export type ApiKeyResult =
+  { ok: true; token: string; prefix: string } | { ok: false; error: string };
+
+export async function createApiKey(
+  workspaceSlug: string,
+  name: string,
+  scopes: string[],
+): Promise<ApiKeyResult> {
+  const ws = await requireWorkspace(workspaceSlug);
+  if (!ws.can("settings:manage")) return { ok: false, error: "Not allowed" };
+  const valid = scopes.filter((s) => API_SCOPES.includes(s));
+  if (valid.length === 0)
+    return { ok: false, error: "Pick at least one scope." };
+
+  const token = `jps_${randomToken(24)}`;
+  const keyHash = await sha256Hex(token);
+  await db.insert(apiKeys).values({
+    workspaceId: ws.id,
+    name: name.trim() || "API key",
+    keyHash,
+    keyPrefix: token.slice(0, 12),
+    scopes: valid,
+    createdByUserId: ws.user.id,
+  });
+  revalidatePath(`/app/${ws.slug}/settings`);
+  return { ok: true, token, prefix: token.slice(0, 12) };
+}
+
+export async function revokeApiKey(workspaceSlug: string, id: string) {
+  const ws = await requireWorkspace(workspaceSlug);
+  if (!ws.can("settings:manage")) return;
+  await db
+    .update(apiKeys)
+    .set({ revokedAt: new Date() })
+    .where(and(eq(apiKeys.id, id), eq(apiKeys.workspaceId, ws.id)));
+  revalidatePath(`/app/${ws.slug}/settings`);
+}
 
 const modeSchema = z.enum([
   "none",

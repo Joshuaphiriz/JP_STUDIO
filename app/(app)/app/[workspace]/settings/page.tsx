@@ -2,7 +2,7 @@ import { and, desc, eq, isNull } from "drizzle-orm";
 import { PageContainer, PageHeader } from "@/components/shell/page-header";
 import { Card } from "@/components/ui/card";
 import { db } from "@/lib/db/client";
-import { clientPortalTokens } from "@/lib/db/schema";
+import { apiKeys, clientPortalTokens } from "@/lib/db/schema";
 import { requireWorkspace } from "@/lib/dal";
 import { getAppUrl } from "@/lib/url";
 import { SettingsClient } from "./settings-client";
@@ -35,6 +35,21 @@ export default async function WorkspaceSettingsPage(
         .orderBy(desc(clientPortalTokens.createdAt))
     : [];
 
+  const keys = canManage
+    ? await db
+        .select({
+          id: apiKeys.id,
+          name: apiKeys.name,
+          keyPrefix: apiKeys.keyPrefix,
+          scopes: apiKeys.scopes,
+          lastUsedAt: apiKeys.lastUsedAt,
+          createdAt: apiKeys.createdAt,
+        })
+        .from(apiKeys)
+        .where(and(eq(apiKeys.workspaceId, ws.id), isNull(apiKeys.revokedAt)))
+        .orderBy(desc(apiKeys.createdAt))
+    : [];
+
   return (
     <PageContainer>
       <PageHeader title="Workspace settings" description={ws.name} />
@@ -48,6 +63,11 @@ export default async function WorkspaceSettingsPage(
             createdAt: l.createdAt.toISOString(),
             expiresAt: l.expiresAt.toISOString(),
             lastUsedAt: l.lastUsedAt?.toISOString() ?? null,
+          }))}
+          apiKeys={keys.map((k) => ({
+            ...k,
+            lastUsedAt: k.lastUsedAt?.toISOString() ?? null,
+            createdAt: k.createdAt.toISOString(),
           }))}
         />
       ) : (
