@@ -6,6 +6,7 @@ const PUBLIC_PATHS = [
   "/sign-in",
   "/auth",
   "/legal",
+  "/offline",
   "/manifest.webmanifest",
   "/sw.js",
 ];
