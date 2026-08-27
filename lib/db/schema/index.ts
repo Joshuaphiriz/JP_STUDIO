@@ -5,3 +5,4 @@ export * from "./social";
 export * from "./content";
 export * from "./collab";
 export * from "./inbox";
+export * from "./analytics";
