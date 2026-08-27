@@ -98,6 +98,8 @@ export default async function ComposerPage(
         accounts={accounts}
         initialPost={initialPost}
         initialAssets={initialAssets}
+        canPublish={ws.can("post:publish")}
+        approvalMode={(ws.approvalMode ?? "none") as string}
       />
     </PageContainer>
   );

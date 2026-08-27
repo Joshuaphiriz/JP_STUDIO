@@ -9,9 +9,11 @@ import {
   organizations,
   users,
   workspaceMembers,
+  workspaceRoles,
   workspaces,
 } from "@/lib/db/schema";
 import { createClient } from "@/lib/supabase/server";
+import { can as canCheck, type Permission, permissionsFor } from "@/lib/rbac";
 
 export type SessionUser = {
   id: string;
@@ -149,6 +151,7 @@ export const requireWorkspace = cache(async (slug: string) => {
       role: workspaceMembers.role,
       customRoleId: workspaceMembers.customRoleId,
       permissionOverrides: workspaceMembers.permissionOverrides,
+      customRolePermissions: workspaceRoles.permissions,
     })
     .from(workspaces)
     .innerJoin(
@@ -158,9 +161,32 @@ export const requireWorkspace = cache(async (slug: string) => {
         eq(workspaceMembers.userId, user.id),
       ),
     )
+    .leftJoin(
+      workspaceRoles,
+      eq(workspaceRoles.id, workspaceMembers.customRoleId),
+    )
     .where(eq(workspaces.slug, slug))
     .limit(1);
 
   if (!row) redirect("/app");
-  return { ...row, user };
+
+  const permCtx = {
+    role: row.role,
+    customRolePermissions: row.customRolePermissions,
+    permissionOverrides: row.permissionOverrides,
+  };
+
+  return {
+    ...row,
+    user,
+    can: (permission: Permission) => canCheck(permCtx, permission),
+    permissions: permissionsFor(permCtx),
+  };
 });
+
+/** Assert a permission in the current workspace; redirect to overview if denied. */
+export async function requirePermission(slug: string, permission: Permission) {
+  const ws = await requireWorkspace(slug);
+  if (!ws.can(permission)) redirect(`/app/${ws.slug}`);
+  return ws;
+}

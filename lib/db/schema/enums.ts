@@ -77,3 +77,8 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 ]);
 
 export const themeScopeEnum = pgEnum("theme_scope", ["user", "workspace"]);
+
+export type WorkspaceRole = (typeof workspaceRoleEnum.enumValues)[number];
+export type OrgRole = (typeof orgRoleEnum.enumValues)[number];
+export type PostStatus = (typeof postStatusEnum.enumValues)[number];
+export type ApprovalMode = (typeof approvalModeEnum.enumValues)[number];

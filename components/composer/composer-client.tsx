@@ -24,6 +24,7 @@ import {
   publishNow,
   saveDraft,
   schedulePost,
+  submitForApproval,
 } from "@/app/(app)/app/[workspace]/composer/actions";
 import { PlatformPreview } from "./platform-preview";
 
@@ -55,14 +56,19 @@ export function ComposerClient({
   accounts,
   initialPost,
   initialAssets,
+  canPublish,
+  approvalMode,
 }: {
   workspaceSlug: string;
   accounts: Account[];
   initialPost: InitialPost;
   initialAssets: Asset[];
+  canPublish: boolean;
+  approvalMode: string;
 }) {
   const router = useRouter();
   const ctx = useMemo(() => ({ workspaceSlug }), [workspaceSlug]);
+  const needsApproval = approvalMode !== "none" || !canPublish;
 
   const [postId, setPostId] = useState<string | undefined>(initialPost?.id);
   const [caption, setCaption] = useState(initialPost?.caption ?? "");
@@ -156,30 +162,42 @@ export function ComposerClient({
         intent === "draft"
           ? saveDraft
           : intent === "schedule"
-            ? schedulePost
-            : publishNow;
+            ? needsApproval
+              ? submitForApproval
+              : schedulePost
+            : needsApproval
+              ? submitForApproval
+              : publishNow;
       const res = await fn(ctx, buildInput());
       if (!res.ok) {
         toast.error(res.error);
         return;
       }
       setPostId(res.postId);
-      if (intent === "draft") toast.success("Draft saved");
-      else if (intent === "schedule") {
+      if (intent === "draft") {
+        toast.success("Draft saved");
+        return;
+      }
+      if (res.awaitingApproval) {
+        toast.success("Submitted for approval");
+        router.push(`/app/${workspaceSlug}`);
+        return;
+      }
+      if (intent === "schedule") {
         toast.success("Scheduled");
         router.push(`/app/${workspaceSlug}/calendar`);
-      } else {
-        toast[res.status === "published" ? "success" : "message"](
-          res.status === "published"
-            ? "Published"
-            : res.status === "partially_failed"
-              ? "Published to some accounts — check Accounts for errors"
-              : res.status === "failed"
-                ? "Publishing failed"
-                : "Publishing…",
-        );
-        if (res.status === "published") router.push(`/app/${workspaceSlug}`);
+        return;
       }
+      toast[res.status === "published" ? "success" : "message"](
+        res.status === "published"
+          ? "Published"
+          : res.status === "partially_failed"
+            ? "Published to some accounts — check Accounts for errors"
+            : res.status === "failed"
+              ? "Publishing failed"
+              : "Publishing…",
+      );
+      if (res.status === "published") router.push(`/app/${workspaceSlug}`);
     } finally {
       setBusy(null);
     }
@@ -375,7 +393,8 @@ export function ComposerClient({
             onClick={() => run("schedule")}
             disabled={busy !== null || !scheduledAt}
           >
-            <CalendarClock className="size-4" /> Schedule
+            <CalendarClock className="size-4" />
+            {needsApproval ? "Submit for date" : "Schedule"}
           </Button>
           <Button onClick={() => run("publish")} disabled={busy !== null}>
             {busy === "publish" ? (
@@ -383,9 +402,16 @@ export function ComposerClient({
             ) : (
               <Send className="size-4" />
             )}
-            Publish now
+            {needsApproval ? "Submit for approval" : "Publish now"}
           </Button>
         </div>
+        {needsApproval && (
+          <p className="-mt-2 text-xs text-[var(--text-ghost)]">
+            {approvalMode === "none"
+              ? "Your posts go through review before publishing."
+              : "This workspace requires approval before posts go live."}
+          </p>
+        )}
       </div>
 
       {/* previews */}

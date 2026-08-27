@@ -18,10 +18,11 @@ export const WORKSPACE_NAV: NavItem[] = [
     ready: true,
   },
   { label: "Queue", segment: "queue", icon: "ListChecks" },
-  { label: "Approvals", segment: "approvals", icon: "ListChecks" },
+  { label: "Approvals", segment: "approvals", icon: "ListChecks", ready: true },
   { label: "Inbox", segment: "inbox", icon: "Inbox" },
   { label: "Analytics", segment: "analytics", icon: "LineChart" },
   { label: "Media", segment: "media", icon: "ImageIcon", ready: true },
   { label: "Accounts", segment: "accounts", icon: "Plug", ready: true },
   { label: "Members", segment: "members", icon: "Users", ready: true },
+  { label: "Settings", segment: "settings", icon: "Settings", ready: true },
 ];

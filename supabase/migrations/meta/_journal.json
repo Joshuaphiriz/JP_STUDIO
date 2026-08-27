@@ -15,6 +15,13 @@
       "when": 1787838235588,
       "tag": "0001_content",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1787840395486,
+      "tag": "0002_collab",
+      "breakpoints": true
     }
   ]
 }
