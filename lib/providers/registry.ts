@@ -1,4 +1,5 @@
 import "server-only";
+import { CAPABILITIES } from "@/lib/platforms/capabilities";
 import type { PlatformKey } from "@/lib/platforms/catalog";
 import { envCredentials } from "./credentials";
 import { LinkedInProvider } from "./linkedin";
@@ -8,18 +9,25 @@ import { TikTokProvider } from "./tiktok";
 import type { SocialProvider } from "./types";
 
 export class ProviderNotConfiguredError extends Error {
-  constructor(readonly platform: PlatformKey) {
-    super(`No app credentials configured for ${platform}`);
+  constructor(readonly platform: string) {
+    super(`Platform "${platform}" is not available on this deployment`);
     this.name = "ProviderNotConfiguredError";
   }
 }
 
+/** The platforms JP Studio has provider implementations for. */
+export function isSupportedPlatform(platform: string): platform is PlatformKey {
+  return platform in CAPABILITIES;
+}
+
 /**
- * Build a provider instance for a platform using env credentials. Throws
- * `ProviderNotConfiguredError` when the deployment hasn't supplied keys — the
- * connect UI catches this to show setup instructions.
+ * Build a provider instance for a platform using env credentials. Accepts the
+ * raw DB platform value; throws `ProviderNotConfiguredError` for unsupported
+ * platforms or missing keys — the connect UI catches this.
  */
-export function getProvider(platform: PlatformKey): SocialProvider {
+export function getProvider(platform: string): SocialProvider {
+  if (!isSupportedPlatform(platform))
+    throw new ProviderNotConfiguredError(platform);
   const creds = envCredentials(platform);
 
   switch (platform) {
@@ -42,7 +50,8 @@ export function getProvider(platform: PlatformKey): SocialProvider {
   }
 }
 
-export function isPlatformConfigured(platform: PlatformKey): boolean {
+export function isPlatformConfigured(platform: string): boolean {
+  if (!isSupportedPlatform(platform)) return false;
   if (platform === "telegram") return true;
   return envCredentials(platform) !== null;
 }

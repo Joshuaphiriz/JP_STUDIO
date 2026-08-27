@@ -1,6 +1,26 @@
 import type { PlatformCapabilities } from "@/lib/providers/types";
 import type { PlatformKey } from "./catalog";
 
+/** Conservative fallback for a platform without an explicit declaration. */
+const GENERIC: PlatformCapabilities = {
+  platform: "telegram",
+  captionMax: 2200,
+  media: { image: true, video: true, maxItems: 10 },
+  supportsFirstComment: false,
+  supportsScheduling: "internal",
+  publish: true,
+  comments: false,
+  mentions: false,
+  dms: false,
+  analytics: false,
+  scopes: [],
+  needsAppReview: true,
+};
+
+export function capabilitiesFor(platform: string): PlatformCapabilities {
+  return CAPABILITIES[platform as PlatformKey] ?? GENERIC;
+}
+
 /**
  * Per-platform capability + limit declarations. The composer reads these to show
  * character counters, gate media types, and warn on carousel limits.

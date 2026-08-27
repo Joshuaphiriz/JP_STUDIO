@@ -14,6 +14,8 @@ export const platformEnum = pgEnum("platform", [
   "google_business",
 ]);
 
+export type Platform = (typeof platformEnum.enumValues)[number];
+
 export const orgRoleEnum = pgEnum("org_role", ["owner", "admin", "member"]);
 
 export const workspaceRoleEnum = pgEnum("workspace_role", [

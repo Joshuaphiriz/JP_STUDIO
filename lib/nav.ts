@@ -10,13 +10,18 @@ export type NavItem = {
 /** Workspace-scoped navigation. Hrefs are built as /app/<workspace>/<segment>. */
 export const WORKSPACE_NAV: NavItem[] = [
   { label: "Overview", segment: "", icon: "Home", ready: true },
-  { label: "Composer", segment: "composer", icon: "PenSquare" },
-  { label: "Calendar", segment: "calendar", icon: "CalendarClock" },
+  { label: "Composer", segment: "composer", icon: "PenSquare", ready: true },
+  {
+    label: "Calendar",
+    segment: "calendar",
+    icon: "CalendarClock",
+    ready: true,
+  },
   { label: "Queue", segment: "queue", icon: "ListChecks" },
   { label: "Approvals", segment: "approvals", icon: "ListChecks" },
   { label: "Inbox", segment: "inbox", icon: "Inbox" },
   { label: "Analytics", segment: "analytics", icon: "LineChart" },
-  { label: "Media", segment: "media", icon: "ImageIcon" },
+  { label: "Media", segment: "media", icon: "ImageIcon", ready: true },
   { label: "Accounts", segment: "accounts", icon: "Plug", ready: true },
   { label: "Members", segment: "members", icon: "Users", ready: true },
 ];
