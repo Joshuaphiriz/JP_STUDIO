@@ -1,0 +1,11 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="JP Studio">
+  <defs>
+    <linearGradient id="jp-g" x1="96" y1="72" x2="416" y2="440" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3AA0FF"/>
+      <stop offset="1" stop-color="#0A5CE0"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="116" fill="url(#jp-g)"/>
+  <path d="M188 146h44v134c0 40-25 66-66 66-30 0-52-14-63-38l36-22c5 12 14 19 26 19 15 0 23-9 23-27V146Z" fill="#fff"/>
+  <path d="M270 146h74c44 0 74 27 74 68s-31 69-75 69h-29v63h-44V146Zm44 39v59h26c19 0 30-11 30-30 0-18-11-29-30-29h-26Z" fill="#fff"/>
+</svg>

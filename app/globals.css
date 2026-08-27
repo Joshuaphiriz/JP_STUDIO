@@ -1,26 +1,257 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/*
+ * Dark mode is attribute-driven (`data-theme="dark"`) with a
+ * prefers-color-scheme fallback when no explicit choice is set.
+ */
+@custom-variant dark {
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(
+      :root:not([data-theme="light"]) *,
+      :root:not([data-theme="light"])
+    ) {
+      @slot;
+    }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/*
+ * Map design tokens (defined at runtime by <ThemeStyle/> in resolve.ts) onto
+ * Tailwind's utility namespaces. `inline` keeps them as `var(--x)` references
+ * so live theme edits take effect without a rebuild.
+ */
+@theme inline {
+  --color-brand-50: var(--brand-50);
+  --color-brand-100: var(--brand-100);
+  --color-brand-200: var(--brand-200);
+  --color-brand-300: var(--brand-300);
+  --color-brand-400: var(--brand-400);
+  --color-brand-500: var(--brand-500);
+  --color-brand-600: var(--brand-600);
+  --color-brand-700: var(--brand-700);
+  --color-brand-800: var(--brand-800);
+  --color-brand-900: var(--brand-900);
+  --color-brand-950: var(--brand-950);
+
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-active: var(--primary-active);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-fg: var(--brand-fg);
+
+  --color-surface-0: var(--surface-0);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-surface-inset: var(--surface-inset);
+
+  --color-content: var(--text-primary);
+  --color-content-secondary: var(--text-secondary);
+  --color-content-tertiary: var(--text-tertiary);
+  --color-content-ghost: var(--text-ghost);
+
+  --color-line: var(--border);
+  --color-line-strong: var(--border-strong);
+
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+  --color-info: var(--info);
+
+  --radius-xs: var(--radius-xs);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-2xl: calc(var(--radius-md) + 20px);
+  --radius-full: var(--radius-full);
+
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+
+  --ease-out: var(--ease-out);
+  --ease-spring: var(--ease-spring);
+  --ease-in-out: var(--ease-in-out);
+
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
+  --font-mono: var(--font-mono);
+}
+
+/* Fallback token values so the app renders before <ThemeStyle/> hydrates
+   (e.g. error pages, isolated component tests). resolve.ts overrides all. */
+:root {
+  --brand-500: #0a84ff;
+  --brand-400: #409cff;
+  --brand-600: #0060df;
+  --brand-fg: #ffffff;
+  --accent: #30d158;
+  --accent-fg: #06230f;
+  --primary: #0a84ff;
+  --primary-hover: #0060df;
+  --primary-active: #004fb8;
+  --primary-soft: #e5f1ff;
+  --primary-ring: #0a84ff59;
+  --surface-0: #ffffff;
+  --surface-1: #f7f8fa;
+  --surface-2: #eef0f3;
+  --surface-3: #e4e7ec;
+  --surface-inset: #f2f3f6;
+  --text-primary: #1c1f24;
+  --text-secondary: #5b616e;
+  --text-tertiary: #848b98;
+  --text-ghost: #a9b0bd;
+  --border: #e2e5ea;
+  --border-strong: #cfd3da;
+  --overlay: oklch(0.2 0 0 / 0.4);
+  --material: oklch(1 0 0 / 0.72);
+  --focus-ring: #0a84ff;
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+  --shadow-xs: 0 1px 2px oklch(0 0 0 / 0.07);
+  --shadow-sm: 0 1px 3px oklch(0 0 0 / 0.09), 0 1px 2px oklch(0 0 0 / 0.06);
+  --shadow-md: 0 4px 12px oklch(0 0 0 / 0.09), 0 2px 4px oklch(0 0 0 / 0.05);
+  --shadow-lg: 0 12px 32px oklch(0 0 0 / 0.12), 0 4px 8px oklch(0 0 0 / 0.05);
+  --shadow-xl: 0 24px 64px oklch(0 0 0 / 0.16), 0 8px 16px oklch(0 0 0 / 0.06);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast: 150ms;
+  --dur-base: 220ms;
+  --dur-slow: 360ms;
+  --density: 1;
+  --font-body:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", ui-sans-serif,
+    system-ui, sans-serif;
+  --font-display: var(--font-body);
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+  --success: #34c759;
+  --warning: #ff9f0a;
+  --error: #ff3b30;
+  --info: #0a84ff;
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background: var(--surface-1);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* safe-area for installed PWA */
+    padding: env(safe-area-inset-top) env(safe-area-inset-right)
+      env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  ::selection {
+    background: var(--primary-soft);
+    color: var(--primary-active);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+    border-radius: var(--radius-xs);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: color-mix(in oklab, var(--text-ghost) 45%, transparent);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in oklab, var(--text-ghost) 70%, transparent);
+    background-clip: content-box;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* Frosted material used by sidebars, top bars, sheets, command palette. */
+  .material {
+    background: var(--material);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+  }
+
+  /* iOS Settings–style grouped inset card. */
+  .inset-group {
+    background: var(--surface-0);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xs);
+    overflow: clip;
+  }
+  .inset-group > * + * {
+    border-top: 1px solid var(--border);
+  }
+
+  .press {
+    transition:
+      transform var(--dur-fast) var(--ease-out),
+      background-color var(--dur-fast) var(--ease-out),
+      box-shadow var(--dur-base) var(--ease-out);
+  }
+  .press:active {
+    transform: scale(0.97);
+  }
+}
+
+@layer utilities {
+  .spacing-density {
+    --tw-space-scale: var(--density);
+  }
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: var(--dur-base);
+    animation-timing-function: var(--ease-out);
+  }
 }

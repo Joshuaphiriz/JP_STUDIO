@@ -1,36 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# JP Studio
 
-## Getting Started
+A progressive web app for social media management — plan, compose, schedule,
+approve, and publish content across every platform from one workspace.
 
-First, run the development server:
+Reimplementation of the [BrightBean Studio](https://github.com/brightbeanxyz/brightbean-studio)
+feature set on a Next.js + Supabase stack, with a full live theme editor and an
+Apple-grade interface.
+
+## Stack
+
+| | |
+|---|---|
+| Framework | Next.js 16 (App Router), React 19, TypeScript |
+| Data | Supabase (Postgres, Auth, Storage, Edge Functions, `pg_cron`) |
+| ORM | Drizzle |
+| UI | Tailwind CSS v4, Radix primitives, `motion` |
+| PWA | Hand-rolled service worker, Web Push |
+| Deploy | Vercel (app) + Supabase (data & scheduled jobs) |
+
+## Getting started
 
 ```bash
+npm install
+cp .env.example .env.local     # fill in Supabase + keys
+npm run icons                  # generate PWA icons from public/brand/logo.svg
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Database
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+# apply schema + policies to your Supabase project
+psql "$DIRECT_URL" -f supabase/migrations/0000_init.sql
+psql "$DIRECT_URL" -f supabase/rls.sql
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# after schema changes
+npm run db:generate            # new migration from lib/db/schema
+```
 
-## Learn More
+### Auth setup (Supabase dashboard)
 
-To learn more about Next.js, take a look at the following resources:
+- Authentication → URL Configuration → Site URL = your app URL, and add
+  `<app>/auth/callback` to Redirect URLs.
+- Authentication → Providers → enable Email (magic link) and Google.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Scripts
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| script | does |
+|---|---|
+| `npm run dev` / `build` / `start` | Next.js |
+| `npm run check` | lint + typecheck + tests |
+| `npm run db:generate` / `db:migrate` / `db:studio` | Drizzle |
+| `npm run icons` | regenerate PWA/favicon assets |
 
-## Deploy on Vercel
+## Project layout
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+app/            routes — (marketing), (auth), (app), api, legal, offline
+components/     ui/ (primitives), shell/, theme/, theme-editor/, motion/, pwa/
+lib/            db/ (schema + client), supabase/, theme/, providers/ (Phase 1),
+               dal.ts (auth + membership), crypto.ts, env.ts
+supabase/       migrations/, rls.sql, functions/ (Phase 1 job runners)
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Roadmap
+
+- **Phase 0 — Foundation** ✅ auth, tenancy, app shell, theme editor, PWA
+- **Phase 1** — provider integrations (Meta, TikTok, LinkedIn), composer,
+  media library, calendar, scheduled publishing
+- **Phase 2** — RBAC, approval workflows, client portal, notifications
+- **Phase 3** — unified inbox, analytics, reports
+- **Phase 4** — REST API, MCP endpoint, audit log, hardening
+
+See `.claude/plans/` for the full plan.
