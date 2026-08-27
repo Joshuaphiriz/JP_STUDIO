@@ -1,12 +1,10 @@
-/* JP Studio service worker — hand-rolled, no build step.
-   - Navigations always go to the network (no offline interception — this app
-     needs a connection, and a stale/misfiring offline page is worse than none).
-   - Static assets: stale-while-revalidate.
-   - Web Push + notification click handling.
-   Bump CACHE_VERSION to force clients onto a new worker. */
+/* JP Studio service worker — v3.
+   Deliberately minimal: Web Push only. No fetch interception, no caching.
+   (Earlier versions intercepted requests and could serve a broken/undefined
+   response when the network hiccuped — never again. Next.js already ships
+   immutable, CDN-cached static assets.) */
 
-const CACHE_VERSION = "jp-studio-v2";
-const ASSET_CACHE = `${CACHE_VERSION}-assets`;
+const SW_VERSION = "jp-studio-v3";
 
 self.addEventListener("install", () => {
   self.skipWaiting();
@@ -14,60 +12,13 @@ self.addEventListener("install", () => {
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches
-      .keys()
-      .then((keys) =>
-        Promise.all(
-          keys
-            .filter((k) => !k.startsWith(CACHE_VERSION))
-            .map((k) => caches.delete(k)),
-        ),
-      )
-      .then(() => self.clients.claim()),
+    (async () => {
+      // drop any caches left by older workers
+      const keys = await caches.keys();
+      await Promise.all(keys.map((k) => caches.delete(k)));
+      await self.clients.claim();
+    })(),
   );
-});
-
-function isStaticAsset(url) {
-  return (
-    url.pathname.startsWith("/_next/static/") ||
-    url.pathname.startsWith("/icons/") ||
-    url.pathname.startsWith("/brand/") ||
-    /\.(?:css|js|woff2?|png|jpg|jpeg|svg|webp|ico)$/.test(url.pathname)
-  );
-}
-
-self.addEventListener("fetch", (event) => {
-  const { request } = event;
-  if (request.method !== "GET") return;
-
-  // Never touch navigations, auth, or API traffic — straight to the network.
-  if (request.mode === "navigate") return;
-
-  const url = new URL(request.url);
-  if (url.origin !== self.location.origin) return;
-  if (
-    url.pathname.startsWith("/api/") ||
-    url.pathname.startsWith("/auth/") ||
-    url.pathname === "/sw.js"
-  ) {
-    return;
-  }
-
-  if (isStaticAsset(url)) {
-    event.respondWith(
-      (async () => {
-        const cache = await caches.open(ASSET_CACHE);
-        const cached = await cache.match(request);
-        const network = fetch(request)
-          .then((res) => {
-            if (res.ok) cache.put(request, res.clone());
-            return res;
-          })
-          .catch(() => cached);
-        return cached || network;
-      })(),
-    );
-  }
 });
 
 self.addEventListener("push", (event) => {
@@ -77,9 +28,8 @@ self.addEventListener("push", (event) => {
   } catch {
     data = { title: "JP Studio", body: event.data ? event.data.text() : "" };
   }
-  const title = data.title || "JP Studio";
   event.waitUntil(
-    self.registration.showNotification(title, {
+    self.registration.showNotification(data.title || "JP Studio", {
       body: data.body || "",
       icon: data.icon || "/icons/icon-192.png",
       badge: "/icons/icon-192.png",
@@ -109,3 +59,5 @@ self.addEventListener("notificationclick", (event) => {
 self.addEventListener("message", (event) => {
   if (event.data === "SKIP_WAITING") self.skipWaiting();
 });
+
+void SW_VERSION;
