@@ -34,12 +34,16 @@ export function AnalyticsClient({
   followerSeries,
   accounts,
   topPosts,
+  heatmap,
+  heatmapSamples,
 }: {
   totalFollowers: number;
   followerDelta: number;
   followerSeries: { day: string; followers: number }[];
   accounts: Account[];
   topPosts: TopPost[];
+  heatmap: (number | null)[][];
+  heatmapSamples: number;
 }) {
   return (
     <div className="flex flex-col gap-4">
@@ -165,6 +169,71 @@ export function AnalyticsClient({
           </ul>
         )}
       </Card>
+
+      <Card className="p-4">
+        <p className="mb-1 text-sm font-medium">Best time to post</p>
+        <p className="mb-3 text-xs text-[var(--text-tertiary)]">
+          Average engagement by day and hour (UTC). Darker = better.
+        </p>
+        {heatmapSamples < 10 ? (
+          <p className="py-8 text-center text-sm text-[var(--text-tertiary)]">
+            Needs at least 10 published posts with metrics — {heatmapSamples} so
+            far.
+          </p>
+        ) : (
+          <Heatmap grid={heatmap} />
+        )}
+      </Card>
+    </div>
+  );
+}
+
+const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function Heatmap({ grid }: { grid: (number | null)[][] }) {
+  const values = grid.flat().filter((v): v is number => v != null);
+  const max = values.length ? Math.max(...values) : 1;
+
+  return (
+    <div className="overflow-x-auto">
+      <div className="min-w-[560px]">
+        <div className="mb-1 ml-9 grid grid-cols-[repeat(24,minmax(0,1fr))] gap-px">
+          {Array.from({ length: 24 }, (_, h) => (
+            <span
+              key={h}
+              className="text-center text-[9px] text-[var(--text-ghost)]"
+            >
+              {h % 3 === 0 ? h : ""}
+            </span>
+          ))}
+        </div>
+        {grid.map((row, d) => (
+          <div key={d} className="flex items-center gap-px">
+            <span className="w-9 shrink-0 text-[10px] text-[var(--text-tertiary)]">
+              {DAYS[d]}
+            </span>
+            <div className="grid flex-1 grid-cols-[repeat(24,minmax(0,1fr))] gap-px">
+              {row.map((v, h) => (
+                <span
+                  key={h}
+                  title={
+                    v == null
+                      ? `${DAYS[d]} ${h}:00 — no data`
+                      : `${DAYS[d]} ${h}:00 — ${(v * 100).toFixed(1)}%`
+                  }
+                  className="aspect-square rounded-[2px]"
+                  style={{
+                    background:
+                      v == null
+                        ? "var(--surface-2)"
+                        : `color-mix(in oklch, var(--primary) ${Math.round((v / max) * 100)}%, var(--surface-2))`,
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

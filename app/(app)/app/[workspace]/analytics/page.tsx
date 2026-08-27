@@ -79,6 +79,37 @@ export default async function AnalyticsPage(
       .limit(8),
   ]);
 
+  // best-time-to-post heatmap: avg engagement rate by weekday × hour
+  const perfRows = await db
+    .select({
+      publishedAt: platformPosts.publishedAt,
+      engagementRate: postMetrics.engagementRate,
+    })
+    .from(postMetrics)
+    .innerJoin(platformPosts, eq(platformPosts.id, postMetrics.platformPostId))
+    .innerJoin(posts, eq(posts.id, platformPosts.postId))
+    .where(
+      and(eq(posts.workspaceId, ws.id), eq(platformPosts.status, "published")),
+    );
+
+  const buckets: { sum: number; n: number }[][] = Array.from(
+    { length: 7 },
+    () => Array.from({ length: 24 }, () => ({ sum: 0, n: 0 })),
+  );
+  for (const r of perfRows) {
+    if (!r.publishedAt || r.engagementRate == null) continue;
+    const d = new Date(r.publishedAt);
+    const cell = buckets[d.getUTCDay()][d.getUTCHours()];
+    cell.sum += r.engagementRate;
+    cell.n += 1;
+  }
+  const heatmap = buckets.map((row) =>
+    row.map((c) => (c.n > 0 ? c.sum / c.n : null)),
+  );
+  const heatmapSamples = perfRows.filter(
+    (r) => r.publishedAt && r.engagementRate != null,
+  ).length;
+
   // aggregate followers per day across accounts
   const followersByDay = new Map<string, number>();
   for (const s of snapshots) {
@@ -113,6 +144,8 @@ export default async function AnalyticsPage(
           likes: p.likes ?? 0,
           comments: p.comments ?? 0,
         }))}
+        heatmap={heatmap}
+        heatmapSamples={heatmapSamples}
       />
       {snapshots.length === 0 && (
         <p className="mt-4 text-xs text-[var(--text-ghost)]">
